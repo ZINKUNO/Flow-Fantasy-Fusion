@@ -1,0 +1,96 @@
+{
+  "actionId": "stake-and-schedule",
+  "name": "Stake and Schedule Settlement",
+  "description": "Stakes tokens/NFTs for a fantasy league and automatically schedules settlement for game end time using Forte Scheduled Transactions",
+  "version": "1.0.0",
+  "author": "Flow Fantasy Fusion",
+  "category": "defi-gaming",
+  "tags": ["staking", "fantasy-sports", "automation", "scheduled-tx"],
+  "network": "flow-testnet",
+  "requiredCapabilities": [
+    "FungibleToken.Vault",
+    "NonFungibleToken.Collection"
+  ],
+  "parameters": {
+    "leagueId": {
+      "type": "UInt64",
+      "required": true,
+      "description": "ID of the fantasy league to join"
+    },
+    "stakeAmount": {
+      "type": "UFix64",
+      "required": true,
+      "description": "Amount of tokens to stake",
+      "min": 1.0,
+      "max": 10000.0
+    },
+    "tokenType": {
+      "type": "String",
+      "required": true,
+      "description": "Type of token to stake (FLOW, FUSD, USDC)",
+      "allowedValues": ["FLOW", "FUSD", "USDC"]
+    },
+    "gameEndTime": {
+      "type": "UFix64",
+      "required": true,
+      "description": "Unix timestamp when the game ends and settlement should trigger"
+    },
+    "nftId": {
+      "type": "UInt64",
+      "required": false,
+      "description": "Optional NFT ID to stake alongside tokens"
+    },
+    "nftCollection": {
+      "type": "String",
+      "required": false,
+      "description": "NFT collection type if staking an NFT"
+    }
+  },
+  "safety": {
+    "maxStakePerUser": 10000.0,
+    "allowedTokens": ["FLOW", "FUSD", "USDC"],
+    "requiresConfirmation": true,
+    "minimumConfirmations": 1,
+    "reentrancyProtection": true,
+    "escrowValidation": true
+  },
+  "metadata": {
+    "iconUrl": "https://flow-fantasy-fusion.app/icons/stake-action.svg",
+    "color": "#00EF8B",
+    "estimatedGas": "0.001 FLOW",
+    "executionTime": "2-5 seconds"
+  },
+  "transactions": [
+    {
+      "name": "stake",
+      "cadence": "transactions/stake_tokens.cdc",
+      "description": "Stakes tokens for the league"
+    },
+    {
+      "name": "scheduleSettlement",
+      "cadence": "transactions/schedule_settlement.cdc",
+      "description": "Schedules automatic settlement using Forte Scheduled Transactions",
+      "scheduledExecution": true
+    }
+  ],
+  "events": {
+    "onStakeSuccess": {
+      "event": "StakingManager.TokensStaked",
+      "callback": "handleStakeSuccess"
+    },
+    "onSettlementScheduled": {
+      "event": "Settlement.SettlementScheduled",
+      "callback": "handleSettlementScheduled"
+    }
+  },
+  "composability": {
+    "canChainWith": [
+      "request-ai-lineup",
+      "join-league"
+    ],
+    "providesData": {
+      "stakeReceipt": "StakeRecord",
+      "settlementTxId": "String"
+    }
+  }
+}

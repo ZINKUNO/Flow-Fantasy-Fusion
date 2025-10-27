@@ -1,0 +1,39 @@
+{
+  "contracts": {
+    "LeagueFactory": "./contracts/LeagueFactory.cdc",
+    "StakingManager": "./contracts/StakingManager.cdc",
+    "Settlement": "./contracts/Settlement.cdc"
+  },
+  "networks": {
+    "emulator": "127.0.0.1:3569",
+    "testnet": "access.devnet.nodes.onflow.org:9000"
+  },
+  "accounts": {
+    "emulator-account": {
+      "address": "f8d6e0586b0a20c7",
+      "key": "6d12eebfef9866c9b6fa92b97c6e705c26a1785b3c8ea88b90823600ca0e1c1d"
+    },
+    "testnet-account": {
+      "address": "SERVICE_ACCOUNT_ADDRESS",
+      "key": {
+        "$env": "TESTNET_PRIVATE_KEY"
+      }
+    }
+  },
+  "deployments": {
+    "emulator": {
+      "emulator-account": [
+        "LeagueFactory",
+        "StakingManager",
+        "Settlement"
+      ]
+    },
+    "testnet": {
+      "testnet-account": [
+        "LeagueFactory",
+        "StakingManager",
+        "Settlement"
+      ]
+    }
+  }
+}

@@ -1,0 +1,216 @@
+================================================================================
+FLOW FANTASY FUSION - FORTE HACKS SUBMISSION
+================================================================================
+
+PROJECT NAME
+------------
+Flow Fantasy Fusion
+
+TAGLINE
+-------
+AI-powered cross-ecosystem fantasy sports dApp with automated settlements on Flow
+
+ONE-PARAGRAPH PITCH
+-------------------
+Flow Fantasy Fusion revolutionizes fantasy sports by combining blockchain transparency, AI-powered lineup optimization, and automated settlements. Built on Flow blockchain with Forte Actions and Scheduled Transactions, our platform allows users to create custom fantasy leagues, stake FLOW tokens or NBA Top Shot NFTs, receive intelligent lineup suggestions from our rule-based AI, and have matches automatically settled and payouts distributed without manual intervention. We solve the fragmentation of fantasy sports and NFT collectibles by creating a unified, trustless, and automated platform where players compete with real on-chain assets and enjoy provably fair outcomes.
+
+TECHNICAL HIGHLIGHTS
+--------------------
+1. **Cadence Smart Contracts** (LeagueFactory, StakingManager, Settlement)
+   - Resource-oriented programming for safe asset handling
+   - Escrow system with max stake limits and token whitelisting
+   - Event emissions for all major state changes
+   
+2. **Forte Actions Integration**
+   - "Stake and Schedule Settlement" composite action
+   - Safety metadata with validation rules
+   - Composable workflow chaining (stake → AI → settle)
+   
+3. **Scheduled Transactions**
+   - Automatic settlement triggering at league end time
+   - Performance-based score calculation
+   - Smart contract-enforced payout distribution (60%/25%/15% split)
+   
+4. **AI Lineup Predictor**
+   - Rule-based scoring algorithm weighing:
+     * Recent performance (45%)
+     * NFT market value (30%)
+     * Consistency (15%)
+     * Trending data (10%)
+   - Three optimization strategies (balanced, high-risk, conservative)
+   - Explainable AI with confidence scores and rationale
+   
+5. **Full-Stack Architecture**
+   - React frontend with FCL wallet integration
+   - Express backend with caching and rate limiting
+   - Flask AI service with RESTful API
+   - Cross-origin support for composability
+
+6. **Multi-Asset Support**
+   - FLOW, FUSD, USDC token staking
+   - NBA Top Shot NFT integration
+   - Configurable token whitelist per league
+
+BOUNTIES/TRACKS TARGETED
+------------------------
+1. **Main Forte Hacks Track**
+   - Deep integration with Forte Actions
+   - Scheduled Transactions for automation
+   - Safety metadata and composability
+
+2. **Flow Ecosystem**
+   - Cadence smart contracts deployed on testnet
+   - FCL wallet integration
+   - Event-driven architecture
+
+3. **AI/ML Innovation**
+   - Rule-based AI for lineup optimization
+   - Multi-strategy prediction system
+   - Explainable recommendations
+
+4. **Best DeFi/Gaming dApp**
+   - Fantasy sports gamification
+   - Token staking mechanics
+   - Automated settlement and payouts
+
+5. **Best Use of NFTs**
+   - NBA Top Shot moment staking
+   - NFT-based lineup composition
+   - Cross-ecosystem integration
+
+REPRODUCTION GUIDE
+------------------
+Prerequisites:
+- Node.js 18+
+- Python 3.8+
+- Flow CLI installed
+- Flow testnet account with FLOW tokens
+
+Step 1: Clone and Setup
+```bash
+git clone https://github.com/YOUR_USERNAME/flow-fantasy-fusion.git
+cd flow-fantasy-fusion
+bash scripts/setup.sh
+```
+
+Step 2: Configure Environment
+- Copy .env.example to .env
+- Add your Flow testnet private key and address
+- Update contract addresses after deployment
+
+Step 3: Deploy Smart Contracts
+```bash
+bash scripts/deploy_contracts.sh
+```
+- Note the deployed contract addresses
+- Update .env and frontend/.env with addresses
+
+Step 4: Start Services
+```bash
+# Terminal 1: Backend API
+npm run dev:backend
+
+# Terminal 2: AI Service  
+npm run dev:ai
+
+# Terminal 3: Frontend
+npm run dev:frontend
+```
+
+Step 5: Test the Application
+1. Open http://localhost:3000
+2. Click "Connect Wallet" and connect Flow wallet
+3. Navigate to "Create League" and create a test league
+4. Join the league by staking tokens
+5. Request AI lineup suggestion
+6. View scheduled settlement in league details
+7. Check dashboard for your active leagues and stats
+
+Step 6: Run Integration Tests
+```bash
+bash scripts/test_flow.sh
+```
+
+Step 7: Execute Forte Action
+```bash
+# Stake 25.5 FLOW and schedule settlement 7 days from now
+bash scripts/run_forte_action.sh 1 25.5 FLOW $(date -d '+7 days' +%s)
+```
+
+Expected Results:
+- All contracts deployed successfully on testnet
+- Frontend loads and allows wallet connection
+- Leagues can be created and joined
+- AI service returns lineup suggestions with scores
+- Transactions visible on Flow testnet explorer
+- Settlement scheduled for future execution
+
+Troubleshooting:
+- If contracts fail to deploy, check TESTNET_PRIVATE_KEY in .env
+- If AI service fails, ensure Python dependencies installed: pip install -r ai/requirements.txt
+- If frontend doesn't connect, verify VITE_FLOW_ACCESS_NODE in frontend/.env
+- Check all services are running on correct ports (3000, 3001, 5000)
+
+GITHUB REPOSITORY
+-----------------
+https://github.com/YOUR_USERNAME/flow-fantasy-fusion
+
+DEMO VIDEO
+----------
+https://www.loom.com/share/YOUR_VIDEO_ID
+(2-3 minute walkthrough showing wallet connect → create league → stake → AI lineup → settlement)
+
+DEPLOYED CONTRACTS (TESTNET)
+-----------------------------
+LeagueFactory: 0xYOUR_ADDRESS_HERE
+StakingManager: 0xYOUR_ADDRESS_HERE  
+Settlement: 0xYOUR_ADDRESS_HERE
+
+Explorer: https://testnet.flowscan.org/account/YOUR_ADDRESS
+
+KEY TRANSACTIONS
+----------------
+Contract Deployment: https://testnet.flowscan.org/transaction/0xDEPLOY_TX_ID
+Stake Transaction: https://testnet.flowscan.org/transaction/0xSTAKE_TX_ID
+Settlement Transaction: https://testnet.flowscan.org/transaction/0xSETTLE_TX_ID
+
+FRESH CODE DECLARATION
+----------------------
+✅ This project contains 100% fresh code written specifically for Forte Hacks.
+✅ All Cadence contracts, frontend components, backend APIs, and AI algorithms are original.
+✅ Only standard libraries and frameworks (React, Express, Flask, FCL) were used.
+✅ No pre-existing fantasy sports code was copied or adapted.
+
+TEAM
+----
+Solo Developer Submission
+
+CONTACT
+-------
+Email: your.email@example.com
+Twitter: @YourHandle
+Discord: YourDiscord#1234
+
+ADDITIONAL NOTES
+----------------
+- All environment variables use .env.example template (no secrets committed)
+- API keys for Find Labs and Dapper are placeholder-ready for production
+- Code includes comprehensive comments and documentation
+- Project structure follows best practices for hackathon judging
+- Emphasis on Forte Actions composability and Scheduled Transactions
+- Ready for immediate testnet deployment and demonstration
+
+FUTURE ROADMAP
+--------------
+Post-Hackathon:
+- Integration with real sports data (ESPN API, Chainlink oracles)
+- Machine learning model training on historical data
+- Mobile app (React Native)
+- Multi-chain support (Polygon, Arbitrum)
+- DAO governance for protocol upgrades
+
+Thank you for considering Flow Fantasy Fusion for Forte Hacks!
+
+Built with ❤️ on Flow Blockchain
+Fresh Code | Forte Actions | Scheduled Transactions | AI-Powered
+================================================================================

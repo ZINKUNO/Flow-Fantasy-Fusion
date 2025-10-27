@@ -1,0 +1,96 @@
+{
+  "actionId": "request-ai-lineup",
+  "name": "Request AI Lineup Suggestion",
+  "description": "Requests AI-powered lineup suggestions based on player stats, NFT market values, and recent performance",
+  "version": "1.0.0",
+  "author": "Flow Fantasy Fusion",
+  "category": "ai-gaming",
+  "tags": ["ai", "fantasy-sports", "lineup", "prediction"],
+  "network": "flow-testnet",
+  "requiredCapabilities": [],
+  "parameters": {
+    "leagueId": {
+      "type": "UInt64",
+      "required": true,
+      "description": "ID of the fantasy league"
+    },
+    "playerAddress": {
+      "type": "Address",
+      "required": true,
+      "description": "Address of the player requesting the lineup"
+    },
+    "availablePlayers": {
+      "type": "[UInt64]",
+      "required": true,
+      "description": "Array of available player/NFT IDs to choose from"
+    },
+    "positions": {
+      "type": "[String]",
+      "required": true,
+      "description": "Required positions to fill (e.g., ['PG', 'SG', 'SF', 'PF', 'C'])"
+    },
+    "optimizationGoal": {
+      "type": "String",
+      "required": false,
+      "description": "Optimization strategy (balanced, high-risk, conservative)",
+      "defaultValue": "balanced",
+      "allowedValues": ["balanced", "high-risk", "conservative"]
+    }
+  },
+  "safety": {
+    "rateLimitPerUser": 10,
+    "rateLimitWindow": 3600,
+    "requiresConfirmation": false,
+    "validationRequired": true
+  },
+  "metadata": {
+    "iconUrl": "https://flow-fantasy-fusion.app/icons/ai-action.svg",
+    "color": "#8B5CF6",
+    "estimatedGas": "0.0001 FLOW",
+    "executionTime": "1-3 seconds"
+  },
+  "apiEndpoint": {
+    "method": "POST",
+    "url": "/api/ai/predict-lineup",
+    "authentication": "bearer",
+    "timeout": 5000
+  },
+  "responseSchema": {
+    "lineup": {
+      "type": "object",
+      "properties": {
+        "positions": {
+          "type": "object",
+          "description": "Mapping of position to player IDs"
+        },
+        "expectedScore": {
+          "type": "number",
+          "description": "Predicted total score"
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence level (0-1)"
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Brief explanation of the selection"
+        }
+      }
+    }
+  },
+  "events": {
+    "onLineupGenerated": {
+      "callback": "handleLineupGenerated"
+    }
+  },
+  "composability": {
+    "canChainWith": [
+      "stake-and-schedule",
+      "submit-lineup"
+    ],
+    "providesData": {
+      "suggestedLineup": "PlayerLineup",
+      "aiConfidence": "UFix64"
+    }
+  }
+}

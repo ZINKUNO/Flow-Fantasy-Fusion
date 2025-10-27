@@ -1,0 +1,105 @@
+{
+  "actionId": "create-league",
+  "name": "Create Fantasy League",
+  "description": "Creates a new fantasy sports league with configurable parameters and entry requirements",
+  "version": "1.0.0",
+  "author": "Flow Fantasy Fusion",
+  "category": "gaming",
+  "tags": ["league", "fantasy-sports", "create"],
+  "network": "flow-testnet",
+  "requiredCapabilities": [],
+  "parameters": {
+    "leagueName": {
+      "type": "String",
+      "required": true,
+      "description": "Name of the fantasy league",
+      "minLength": 3,
+      "maxLength": 50
+    },
+    "description": {
+      "type": "String",
+      "required": true,
+      "description": "League description",
+      "maxLength": 500
+    },
+    "startTime": {
+      "type": "UFix64",
+      "required": true,
+      "description": "Unix timestamp when the league starts"
+    },
+    "endTime": {
+      "type": "UFix64",
+      "required": true,
+      "description": "Unix timestamp when the league ends"
+    },
+    "minPlayers": {
+      "type": "UInt32",
+      "required": true,
+      "description": "Minimum number of players",
+      "min": 2,
+      "max": 100,
+      "defaultValue": 4
+    },
+    "maxPlayers": {
+      "type": "UInt32",
+      "required": true,
+      "description": "Maximum number of players",
+      "min": 2,
+      "max": 100,
+      "defaultValue": 20
+    },
+    "entryFee": {
+      "type": "UFix64",
+      "required": true,
+      "description": "Entry fee in tokens",
+      "min": 1.0,
+      "max": 10000.0
+    },
+    "allowedTokens": {
+      "type": "[String]",
+      "required": true,
+      "description": "List of allowed token types",
+      "defaultValue": ["FLOW", "FUSD"]
+    },
+    "allowNFTs": {
+      "type": "Bool",
+      "required": true,
+      "description": "Whether NFT staking is allowed",
+      "defaultValue": true
+    }
+  },
+  "safety": {
+    "requiresConfirmation": true,
+    "validationRequired": true,
+    "creatorDeposit": 10.0
+  },
+  "metadata": {
+    "iconUrl": "https://flow-fantasy-fusion.app/icons/create-league.svg",
+    "color": "#00EF8B",
+    "estimatedGas": "0.005 FLOW",
+    "executionTime": "3-7 seconds"
+  },
+  "transactions": [
+    {
+      "name": "createLeague",
+      "cadence": "transactions/create_league.cdc",
+      "description": "Creates the league on-chain"
+    }
+  ],
+  "events": {
+    "onLeagueCreated": {
+      "event": "LeagueFactory.LeagueCreated",
+      "callback": "handleLeagueCreated"
+    }
+  },
+  "composability": {
+    "canChainWith": [
+      "stake-and-schedule",
+      "invite-players"
+    ],
+    "providesData": {
+      "leagueId": "UInt64",
+      "leagueAddress": "Address"
+    }
+  }
+}
