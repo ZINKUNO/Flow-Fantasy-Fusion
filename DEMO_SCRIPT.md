@@ -93,7 +93,7 @@
 
 **On-Screen Text**: 
 - "💰 Staked: 25.5 FLOW"
-- "⏰ Auto-settlement at: Dec 31, 2024"
+- "⏰ Auto-settlement at: Dec 31, 2025"
 
 ---
 

@@ -1,39 +1,52 @@
 {
-  "contracts": {
-    "LeagueFactory": "./contracts/LeagueFactory.cdc",
-    "StakingManager": "./contracts/StakingManager.cdc",
-    "Settlement": "./contracts/Settlement.cdc"
-  },
-  "networks": {
-    "emulator": "127.0.0.1:3569",
-    "testnet": "access.devnet.nodes.onflow.org:9000"
-  },
-  "accounts": {
-    "emulator-account": {
-      "address": "f8d6e0586b0a20c7",
-      "key": "6d12eebfef9866c9b6fa92b97c6e705c26a1785b3c8ea88b90823600ca0e1c1d"
-    },
-    "testnet-account": {
-      "address": "SERVICE_ACCOUNT_ADDRESS",
-      "key": {
-        "$env": "TESTNET_PRIVATE_KEY"
-      }
-    }
-  },
-  "deployments": {
-    "emulator": {
-      "emulator-account": [
-        "LeagueFactory",
-        "StakingManager",
-        "Settlement"
-      ]
-    },
-    "testnet": {
-      "testnet-account": [
-        "LeagueFactory",
-        "StakingManager",
-        "Settlement"
-      ]
-    }
-  }
+	"contracts": {
+		"LeagueFactory": "contracts/LeagueFactory.cdc",
+		"StakingManager": "contracts/StakingManager.cdc",
+		"Settlement": "contracts/Settlement.cdc",
+		"FungibleToken": {
+			"source": "",
+			"aliases": {
+				"testnet": "0x9a0766d93b6608b7"
+			}
+		},
+		"NonFungibleToken": {
+			"source": "",
+			"aliases": {
+				"testnet": "0x631e88ae7f1d7c20"
+			}
+		}
+	},
+	"networks": {
+		"emulator": "127.0.0.1:3569",
+		"mainnet": "access.mainnet.nodes.onflow.org:9000",
+		"testnet": "access.devnet.nodes.onflow.org:9000"
+	},
+	"accounts": {
+		"emulator-account": {
+			"address": "f8d6e0586b0a20c7",
+			"key": {
+				"type": "file",
+				"location": "emulator-account.pkey"
+			}
+		},
+		"testnet-account": {
+			"address": "0xf474649aaa285cf5",
+			"key": {
+				"type": "hex",
+				"index": 0,
+				"signatureAlgorithm": "ECDSA_secp256k1",
+				"hashAlgorithm": "SHA2_256",
+				"privateKey": "$TESTNET_PRIVATE_KEY"
+			}
+		}
+	},
+	"deployments": {
+		"testnet": {
+			"testnet-account": [
+				"LeagueFactory",
+				"StakingManager",
+				"Settlement"
+			]
+		}
+	}
 }
