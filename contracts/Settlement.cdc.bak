@@ -5,32 +5,32 @@
 import LeagueFactory from "./LeagueFactory.cdc"
 import StakingManager from "./StakingManager.cdc"
 
-access(all) contract Settlement {
+pub contract Settlement {
     
     // Events
-    access(all) event SettlementInitiated(leagueId: UInt64, timestamp: UFix64)
-    access(all) event ScoresCalculated(leagueId: UInt64, scores: {Address: UFix64})
-    access(all) event WinnersDetermined(leagueId: UInt64, winners: [Address], payouts: {Address: UFix64})
-    access(all) event SettlementCompleted(leagueId: UInt64, totalPayout: UFix64)
-    access(all) event SettlementScheduled(leagueId: UInt64, scheduledTime: UFix64, txId: String)
+    pub event SettlementInitiated(leagueId: UInt64, timestamp: UFix64)
+    pub event ScoresCalculated(leagueId: UInt64, scores: {Address: UFix64})
+    pub event WinnersDetermined(leagueId: UInt64, winners: [Address], payouts: {Address: UFix64})
+    pub event SettlementCompleted(leagueId: UInt64, totalPayout: UFix64)
+    pub event SettlementScheduled(leagueId: UInt64, scheduledTime: UFix64, txId: String)
     
     // Storage paths
-    access(all) let SettlementStoragePath: StoragePath
-    access(all) let SettlementAdminPath: StoragePath
+    pub let SettlementStoragePath: StoragePath
+    pub let SettlementAdminPath: StoragePath
     
     // Settlement status
-    access(all) enum SettlementStatus: UInt8 {
-        access(all) case NotStarted
-        access(all) case Calculating
-        access(all) case Completed
-        access(all) case Failed
+    pub enum SettlementStatus: UInt8 {
+        pub case NotStarted
+        pub case Calculating
+        pub case Completed
+        pub case Failed
     }
     
     // Player score structure
-    access(all) struct PlayerScore {
-        access(all) let player: Address
-        access(all) var score: UFix64
-        access(all) let breakdown: {String: UFix64}  // category -> points
+    pub struct PlayerScore {
+        pub let player: Address
+        pub var score: UFix64
+        pub let breakdown: {String: UFix64}  // category -> points
         
         init(player: Address, score: UFix64, breakdown: {String: UFix64}) {
             self.player = player
@@ -38,19 +38,19 @@ access(all) contract Settlement {
             self.breakdown = breakdown
         }
         
-        access(all) fun updateScore(newScore: UFix64) {
+        pub fun updateScore(newScore: UFix64) {
             self.score = newScore
         }
     }
     
     // Settlement result
-    access(all) struct SettlementResult {
-        access(all) let leagueId: UInt64
-        access(all) let scores: {Address: PlayerScore}
-        access(all) let rankings: [Address]  // sorted by score
-        access(all) let payouts: {Address: UFix64}
-        access(all) let timestamp: UFix64
-        access(all) let status: SettlementStatus
+    pub struct SettlementResult {
+        pub let leagueId: UInt64
+        pub let scores: {Address: PlayerScore}
+        pub let rankings: [Address]  // sorted by score
+        pub let payouts: {Address: UFix64}
+        pub let timestamp: UFix64
+        pub let status: SettlementStatus
         
         init(
             leagueId: UInt64,
@@ -68,11 +68,11 @@ access(all) contract Settlement {
     }
     
     // Scheduled settlement info
-    access(all) struct ScheduledSettlement {
-        access(all) let leagueId: UInt64
-        access(all) let scheduledTime: UFix64
-        access(all) let txId: String
-        access(all) var executed: Bool
+    pub struct ScheduledSettlement {
+        pub let leagueId: UInt64
+        pub let scheduledTime: UFix64
+        pub let txId: String
+        pub var executed: Bool
         
         init(leagueId: UInt64, scheduledTime: UFix64, txId: String) {
             self.leagueId = leagueId
@@ -81,13 +81,13 @@ access(all) contract Settlement {
             self.executed = false
         }
         
-        access(all) fun markExecuted() {
+        pub fun markExecuted() {
             self.executed = true
         }
     }
     
     // Settlement engine resource
-    access(all) resource SettlementEngine {
+    pub resource SettlementEngine {
         access(self) let settlementResults: {UInt64: SettlementResult}
         access(self) let scheduledSettlements: {UInt64: ScheduledSettlement}
         
@@ -97,7 +97,7 @@ access(all) contract Settlement {
         }
         
         // Schedule a settlement for a specific time (Forte Scheduled Transaction)
-        access(all) fun scheduleSettlement(
+        pub fun scheduleSettlement(
             leagueId: UInt64,
             scheduledTime: UFix64,
             txId: String
@@ -125,7 +125,7 @@ access(all) contract Settlement {
         }
         
         // Calculate scores for all participants
-        access(all) fun calculateScores(
+        pub fun calculateScores(
             leagueId: UInt64,
             lineups: {Address: LeagueFactory.PlayerLineup},
             performanceData: {UInt64: UFix64}  // playerId/nftId -> performance score
@@ -175,7 +175,7 @@ access(all) contract Settlement {
         }
         
         // Determine winners and calculate payouts
-        access(all) fun determineWinners(
+        pub fun determineWinners(
             leagueId: UInt64,
             scores: {Address: PlayerScore},
             totalPrizePool: UFix64
@@ -211,7 +211,7 @@ access(all) contract Settlement {
         }
         
         // Execute settlement
-        access(all) fun executeSettlement(
+        pub fun executeSettlement(
             leagueId: UInt64,
             lineups: {Address: LeagueFactory.PlayerLineup},
             performanceData: {UInt64: UFix64},
@@ -260,12 +260,12 @@ access(all) contract Settlement {
         }
         
         // Get settlement result
-        access(all) fun getSettlementResult(leagueId: UInt64): SettlementResult? {
+        pub fun getSettlementResult(leagueId: UInt64): SettlementResult? {
             return self.settlementResults[leagueId]
         }
         
         // Get scheduled settlement
-        access(all) fun getScheduledSettlement(leagueId: UInt64): ScheduledSettlement? {
+        pub fun getScheduledSettlement(leagueId: UInt64): ScheduledSettlement? {
             return self.scheduledSettlements[leagueId]
         }
         
@@ -305,20 +305,20 @@ access(all) contract Settlement {
     }
     
     // Public interface
-    access(all) resource interface SettlementEnginePublic {
-        access(all) fun getSettlementResult(leagueId: UInt64): SettlementResult?
-        access(all) fun getScheduledSettlement(leagueId: UInt64): ScheduledSettlement?
+    pub resource interface SettlementEnginePublic {
+        pub fun getSettlementResult(leagueId: UInt64): SettlementResult?
+        pub fun getScheduledSettlement(leagueId: UInt64): ScheduledSettlement?
     }
     
     // Create empty settlement engine
-    access(all) fun createSettlementEngine(): @SettlementEngine {
+    pub fun createSettlementEngine(): @SettlementEngine {
         return <- create SettlementEngine()
     }
     
     // Admin resource
-    access(all) resource Admin {
+    pub resource Admin {
         // Admin can trigger manual settlements if needed
-        access(all) fun forceSettlement(leagueId: UInt64) {
+        pub fun forceSettlement(leagueId: UInt64) {
             // Implementation for manual override
         }
     }
@@ -329,10 +329,10 @@ access(all) contract Settlement {
         
         // Create and save settlement engine
         let engine <- create SettlementEngine()
-        self.account.storage.save(<-engine, to: self.SettlementStoragePath)
+        self.account.save(<-engine, to: self.SettlementStoragePath)
         
         // Create and save admin
         let admin <- create Admin()
-        self.account.storage.save(<-admin, to: self.SettlementAdminPath)
+        self.account.save(<-admin, to: self.SettlementAdminPath)
     }
 }

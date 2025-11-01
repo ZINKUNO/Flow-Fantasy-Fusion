@@ -5,38 +5,38 @@
 import FungibleToken from 0x9a0766d93b6608b7
 import NonFungibleToken from 0x631e88ae7f1d7c20
 
-access(all) contract LeagueFactory {
+pub contract LeagueFactory {
     
     // Events
-    access(all) event LeagueCreated(leagueId: UInt64, name: String, creator: Address, startTime: UFix64, endTime: UFix64)
-    access(all) event PlayerJoinedLeague(leagueId: UInt64, player: Address)
-    access(all) event LeagueStarted(leagueId: UInt64)
-    access(all) event LeagueFinalized(leagueId: UInt64, winners: [Address])
+    pub event LeagueCreated(leagueId: UInt64, name: String, creator: Address, startTime: UFix64, endTime: UFix64)
+    pub event PlayerJoinedLeague(leagueId: UInt64, player: Address)
+    pub event LeagueStarted(leagueId: UInt64)
+    pub event LeagueFinalized(leagueId: UInt64, winners: [Address])
     
     // Storage paths
-    access(all) let AdminStoragePath: StoragePath
-    access(all) let LeagueStoragePath: StoragePath
-    access(all) let LeaguePublicPath: PublicPath
+    pub let AdminStoragePath: StoragePath
+    pub let LeagueStoragePath: StoragePath
+    pub let LeaguePublicPath: PublicPath
     
     // League status enum
-    access(all) enum LeagueStatus: UInt8 {
-        access(all) case Pending      // 0 - Created but not started
-        access(all) case Active       // 1 - Started and accepting entries
-        access(all) case InProgress   // 2 - Game is running
-        access(all) case Finalizing   // 3 - Computing results
-        access(all) case Completed    // 4 - Finished and payouts distributed
-        access(all) case Cancelled    // 5 - Cancelled
+    pub enum LeagueStatus: UInt8 {
+        pub case Pending      // 0 - Created but not started
+        pub case Active       // 1 - Started and accepting entries
+        pub case InProgress   // 2 - Game is running
+        pub case Finalizing   // 3 - Computing results
+        pub case Completed    // 4 - Finished and payouts distributed
+        pub case Cancelled    // 5 - Cancelled
     }
     
     // League configuration
-    access(all) struct LeagueConfig {
-        access(all) let minPlayers: UInt32
-        access(all) let maxPlayers: UInt32
-        access(all) let entryFee: UFix64
-        access(all) let prizePool: UFix64
-        access(all) let allowedTokens: [String]
-        access(all) let allowNFTs: Bool
-        access(all) let maxStakePerUser: UFix64
+    pub struct LeagueConfig {
+        pub let minPlayers: UInt32
+        pub let maxPlayers: UInt32
+        pub let entryFee: UFix64
+        pub let prizePool: UFix64
+        pub let allowedTokens: [String]
+        pub let allowNFTs: Bool
+        pub let maxStakePerUser: UFix64
         
         init(
             minPlayers: UInt32,
@@ -57,11 +57,11 @@ access(all) contract LeagueFactory {
     }
     
     // Player lineup structure
-    access(all) struct PlayerLineup {
-        access(all) let player: Address
-        access(all) let positions: {String: [UInt64]} // position -> [player/nft ids]
-        access(all) let aiSuggested: Bool
-        access(all) let timestamp: UFix64
+    pub struct PlayerLineup {
+        pub let player: Address
+        pub let positions: {String: [UInt64]} // position -> [player/nft ids]
+        pub let aiSuggested: Bool
+        pub let timestamp: UFix64
         
         init(player: Address, positions: {String: [UInt64]}, aiSuggested: Bool) {
             self.player = player
@@ -72,20 +72,20 @@ access(all) contract LeagueFactory {
     }
     
     // League resource
-    access(all) resource League {
-        access(all) let leagueId: UInt64
-        access(all) let name: String
-        access(all) let description: String
-        access(all) let creator: Address
-        access(all) let startTime: UFix64
-        access(all) let endTime: UFix64
-        access(all) var status: LeagueStatus
-        access(all) let config: LeagueConfig
-        access(all) let participants: [Address]
-        access(all) let lineups: {Address: PlayerLineup}
-        access(all) var totalStaked: UFix64
-        access(all) var settlementScheduled: Bool
-        access(all) var settlementTxId: String?
+    pub resource League {
+        pub let leagueId: UInt64
+        pub let name: String
+        pub let description: String
+        pub let creator: Address
+        pub let startTime: UFix64
+        pub let endTime: UFix64
+        pub var status: LeagueStatus
+        pub let config: LeagueConfig
+        pub let participants: [Address]
+        pub let lineups: {Address: PlayerLineup}
+        pub var totalStaked: UFix64
+        pub var settlementScheduled: Bool
+        pub var settlementTxId: String?
         
         init(
             leagueId: UInt64,
@@ -111,7 +111,7 @@ access(all) contract LeagueFactory {
             self.settlementTxId = nil
         }
         
-        access(all) fun addParticipant(player: Address) {
+        pub fun addParticipant(player: Address) {
             pre {
                 self.status == LeagueStatus.Pending || self.status == LeagueStatus.Active:
                     "League is not accepting new players"
@@ -125,7 +125,7 @@ access(all) contract LeagueFactory {
             emit PlayerJoinedLeague(leagueId: self.leagueId, player: player)
         }
         
-        access(all) fun submitLineup(player: Address, lineup: PlayerLineup) {
+        pub fun submitLineup(player: Address, lineup: PlayerLineup) {
             pre {
                 self.status == LeagueStatus.Active:
                     "League is not accepting lineups"
@@ -136,7 +136,7 @@ access(all) contract LeagueFactory {
             self.lineups[player] = lineup
         }
         
-        access(all) fun startLeague() {
+        pub fun startLeague() {
             pre {
                 self.status == LeagueStatus.Pending:
                     "League already started"
@@ -148,7 +148,7 @@ access(all) contract LeagueFactory {
             emit LeagueStarted(leagueId: self.leagueId)
         }
         
-        access(all) fun beginGame() {
+        pub fun beginGame() {
             pre {
                 self.status == LeagueStatus.Active:
                     "League not ready to begin"
@@ -159,7 +159,7 @@ access(all) contract LeagueFactory {
             self.status = LeagueStatus.InProgress
         }
         
-        access(all) fun scheduleSettlement(txId: String) {
+        pub fun scheduleSettlement(txId: String) {
             pre {
                 self.status == LeagueStatus.InProgress:
                     "League not in progress"
@@ -171,7 +171,7 @@ access(all) contract LeagueFactory {
             self.settlementTxId = txId
         }
         
-        access(all) fun finalizeLeague(winners: [Address]) {
+        pub fun finalizeLeague(winners: [Address]) {
             pre {
                 self.status == LeagueStatus.InProgress || self.status == LeagueStatus.Finalizing:
                     "League not ready for finalization"
@@ -181,30 +181,30 @@ access(all) contract LeagueFactory {
             emit LeagueFinalized(leagueId: self.leagueId, winners: winners)
         }
         
-        access(all) fun updateTotalStaked(amount: UFix64) {
+        pub fun updateTotalStaked(amount: UFix64) {
             self.totalStaked = self.totalStaked + amount
         }
         
-        access(all) fun getParticipantCount(): Int {
+        pub fun getParticipantCount(): Int {
             return self.participants.length
         }
         
-        access(all) fun getLineup(player: Address): PlayerLineup? {
+        pub fun getLineup(player: Address): PlayerLineup? {
             return self.lineups[player]
         }
     }
     
     // League collection resource
-    access(all) resource LeagueCollection {
-        access(all) var leagues: @{UInt64: League}
-        access(all) var nextLeagueId: UInt64
+    pub resource LeagueCollection {
+        pub var leagues: @{UInt64: League}
+        pub var nextLeagueId: UInt64
         
         init() {
             self.leagues <- {}
             self.nextLeagueId = 1
         }
         
-        access(all) fun createLeague(
+        pub fun createLeague(
             name: String,
             description: String,
             creator: Address,
@@ -237,24 +237,27 @@ access(all) contract LeagueFactory {
             return leagueId
         }
         
-        access(all) fun borrowLeague(leagueId: UInt64): &League? {
+        pub fun borrowLeague(leagueId: UInt64): &League? {
             return &self.leagues[leagueId] as &League?
         }
         
-        access(all) fun getLeagueIds(): [UInt64] {
+        pub fun getLeagueIds(): [UInt64] {
             return self.leagues.keys
         }
         
+        destroy() {
+            destroy self.leagues
+        }
     }
     
     // Public interface
-    access(all) resource interface LeagueCollectionPublic {
-        access(all) fun getLeagueIds(): [UInt64]
-        access(all) fun borrowLeague(leagueId: UInt64): &League?
+    pub resource interface LeagueCollectionPublic {
+        pub fun getLeagueIds(): [UInt64]
+        pub fun borrowLeague(leagueId: UInt64): &League?
     }
     
     // Create empty league collection
-    access(all) fun createEmptyLeagueCollection(): @LeagueCollection {
+    pub fun createEmptyLeagueCollection(): @LeagueCollection {
         return <- create LeagueCollection()
     }
     
@@ -265,6 +268,6 @@ access(all) contract LeagueFactory {
         
         // Create and store admin collection
         let collection <- create LeagueCollection()
-        self.account.storage.save(<-collection, to: self.LeagueStoragePath)
+        self.account.save(<-collection, to: self.LeagueStoragePath)
     }
 }

@@ -101,7 +101,7 @@ function App() {
               {/* Bottom Bar */}
               <div className="border-t border-gray-800 pt-6 text-center">
                 <p className="text-sm text-gray-400 mb-2">
-                  <span className="text-flow-green font-semibold">Flow Fantasy Fusion</span> © 2024 | Powered by AI & Forte Actions
+                  <span className="text-flow-green font-semibold">Flow Fantasy Fusion</span> © 2025 | Powered by AI & Forte Actions
                 </p>
                 <p className="text-xs text-gray-500">
                   Built for Forte Hacks on Flow Blockchain

@@ -2,35 +2,35 @@
 // Contract for managing token and NFT stakes in fantasy leagues
 // Fresh Code - Built for Forte Hacks
 
-import FungibleToken from 0x9a0766d93b6608b7
-import NonFungibleToken from 0x631e88ae7f1d7c20
-import LeagueFactory from 0xf474649aaa285cf5
+import FungibleToken from 0xFungibleToken
+import NonFungibleToken from 0xNonFungibleToken
+import LeagueFactory from "./LeagueFactory.cdc"
 
-access(all) contract StakingManager {
+pub contract StakingManager {
     
     // Events
-    access(all) event TokensStaked(leagueId: UInt64, player: Address, amount: UFix64, tokenType: String)
-    access(all) event NFTStaked(leagueId: UInt64, player: Address, nftId: UInt64, collectionType: String)
-    access(all) event StakeReleased(leagueId: UInt64, player: Address, amount: UFix64)
-    access(all) event PayoutDistributed(leagueId: UInt64, winner: Address, amount: UFix64)
+    pub event TokensStaked(leagueId: UInt64, player: Address, amount: UFix64, tokenType: String)
+    pub event NFTStaked(leagueId: UInt64, player: Address, nftId: UInt64, collectionType: String)
+    pub event StakeReleased(leagueId: UInt64, player: Address, amount: UFix64)
+    pub event PayoutDistributed(leagueId: UInt64, winner: Address, amount: UFix64)
     
     // Storage paths
-    access(all) let StakeManagerStoragePath: StoragePath
-    access(all) let StakeManagerPublicPath: PublicPath
+    pub let StakeManagerStoragePath: StoragePath
+    pub let StakeManagerPublicPath: PublicPath
     
     // Maximum stakes and limits
-    access(all) var maxStakePerUser: UFix64
-    access(all) var minStakeAmount: UFix64
-    access(all) let allowedTokenTypes: {String: Bool}
+    pub var maxStakePerUser: UFix64
+    pub var minStakeAmount: UFix64
+    pub let allowedTokenTypes: {String: Bool}
     
     // Stake record structure
-    access(all) struct StakeRecord {
-        access(all) let leagueId: UInt64
-        access(all) let player: Address
-        access(all) let amount: UFix64
-        access(all) let tokenType: String
-        access(all) let timestamp: UFix64
-        access(all) var released: Bool
+    pub struct StakeRecord {
+        pub let leagueId: UInt64
+        pub let player: Address
+        pub let amount: UFix64
+        pub let tokenType: String
+        pub let timestamp: UFix64
+        pub var released: Bool
         
         init(leagueId: UInt64, player: Address, amount: UFix64, tokenType: String) {
             self.leagueId = leagueId
@@ -41,19 +41,19 @@ access(all) contract StakingManager {
             self.released = false
         }
         
-        access(all) fun markReleased() {
+        pub fun markReleased() {
             self.released = true
         }
     }
     
     // NFT stake record
-    access(all) struct NFTStakeRecord {
-        access(all) let leagueId: UInt64
-        access(all) let player: Address
-        access(all) let nftId: UInt64
-        access(all) let collectionType: String
-        access(all) let timestamp: UFix64
-        access(all) var released: Bool
+    pub struct NFTStakeRecord {
+        pub let leagueId: UInt64
+        pub let player: Address
+        pub let nftId: UInt64
+        pub let collectionType: String
+        pub let timestamp: UFix64
+        pub var released: Bool
         
         init(leagueId: UInt64, player: Address, nftId: UInt64, collectionType: String) {
             self.leagueId = leagueId
@@ -64,13 +64,13 @@ access(all) contract StakingManager {
             self.released = false
         }
         
-        access(all) fun markReleased() {
+        pub fun markReleased() {
             self.released = true
         }
     }
     
     // Stake vault resource for holding tokens
-    access(all) resource StakeVault {
+    pub resource StakeVault {
         // League ID -> Player Address -> Stakes
         access(self) let tokenStakes: {UInt64: {Address: [StakeRecord]}}
         access(self) let nftStakes: {UInt64: {Address: [NFTStakeRecord]}}
@@ -85,7 +85,7 @@ access(all) contract StakingManager {
         }
         
         // Stake tokens for a league
-        access(all) fun stakeTokens(
+        pub fun stakeTokens(
             leagueId: UInt64,
             player: Address,
             amount: UFix64,
@@ -146,7 +146,7 @@ access(all) contract StakingManager {
         }
         
         // Stake NFT for a league
-        access(all) fun stakeNFT(
+        pub fun stakeNFT(
             leagueId: UInt64,
             player: Address,
             nftId: UInt64,
@@ -180,12 +180,12 @@ access(all) contract StakingManager {
         }
         
         // Get total staked for a league
-        access(all) fun getTotalStaked(leagueId: UInt64): UFix64 {
+        pub fun getTotalStaked(leagueId: UInt64): UFix64 {
             return self.escrowBalances[leagueId] ?? 0.0
         }
         
         // Get player stakes
-        access(all) fun getPlayerStakes(leagueId: UInt64, player: Address): [StakeRecord] {
+        pub fun getPlayerStakes(leagueId: UInt64, player: Address): [StakeRecord] {
             if let leagueStakes = self.tokenStakes[leagueId] {
                 return leagueStakes[player] ?? []
             }
@@ -193,7 +193,7 @@ access(all) contract StakingManager {
         }
         
         // Get player NFT stakes
-        access(all) fun getPlayerNFTStakes(leagueId: UInt64, player: Address): [NFTStakeRecord] {
+        pub fun getPlayerNFTStakes(leagueId: UInt64, player: Address): [NFTStakeRecord] {
             if let leagueNFTStakes = self.nftStakes[leagueId] {
                 return leagueNFTStakes[player] ?? []
             }
@@ -201,7 +201,7 @@ access(all) contract StakingManager {
         }
         
         // Release stakes (called by settlement)
-        access(all) fun releaseStakes(leagueId: UInt64, player: Address): UFix64 {
+        pub fun releaseStakes(leagueId: UInt64, player: Address): UFix64 {
             var totalReleased: UFix64 = 0.0
             
             if let leagueStakes = self.tokenStakes[leagueId] {
@@ -220,7 +220,7 @@ access(all) contract StakingManager {
         }
         
         // Distribute payout to winners
-        access(all) fun distributePayout(leagueId: UInt64, winners: {Address: UFix64}) {
+        pub fun distributePayout(leagueId: UInt64, winners: {Address: UFix64}) {
             let totalEscrow = self.escrowBalances[leagueId] ?? 0.0
             var totalDistributed: UFix64 = 0.0
             
@@ -246,38 +246,38 @@ access(all) contract StakingManager {
         }
         
         // Get all stakes for a league
-        access(all) fun getAllLeagueStakes(leagueId: UInt64): {Address: [StakeRecord]} {
+        pub fun getAllLeagueStakes(leagueId: UInt64): {Address: [StakeRecord]} {
             return self.tokenStakes[leagueId] ?? {}
         }
     }
     
     // Public interface
-    access(all) resource interface StakeVaultPublic {
-        access(all) fun getTotalStaked(leagueId: UInt64): UFix64
-        access(all) fun getPlayerStakes(leagueId: UInt64, player: Address): [StakeRecord]
+    pub resource interface StakeVaultPublic {
+        pub fun getTotalStaked(leagueId: UInt64): UFix64
+        pub fun getPlayerStakes(leagueId: UInt64, player: Address): [StakeRecord]
     }
     
     // Admin resource for managing stake parameters
-    access(all) resource Admin {
-        access(all) fun updateMaxStakePerUser(newMax: UFix64) {
+    pub resource Admin {
+        pub fun updateMaxStakePerUser(newMax: UFix64) {
             StakingManager.maxStakePerUser = newMax
         }
         
-        access(all) fun updateMinStakeAmount(newMin: UFix64) {
+        pub fun updateMinStakeAmount(newMin: UFix64) {
             StakingManager.minStakeAmount = newMin
         }
         
-        access(all) fun addAllowedTokenType(tokenType: String) {
+        pub fun addAllowedTokenType(tokenType: String) {
             StakingManager.allowedTokenTypes[tokenType] = true
         }
         
-        access(all) fun removeAllowedTokenType(tokenType: String) {
+        pub fun removeAllowedTokenType(tokenType: String) {
             StakingManager.allowedTokenTypes.remove(key: tokenType)
         }
     }
     
     // Create empty stake vault
-    access(all) fun createEmptyStakeVault(): @StakeVault {
+    pub fun createEmptyStakeVault(): @StakeVault {
         return <- create StakeVault()
     }
     
@@ -296,10 +296,10 @@ access(all) contract StakingManager {
         
         // Create and save stake vault
         let vault <- create StakeVault()
-        self.account.storage.save(<-vault, to: self.StakeManagerStoragePath)
+        self.account.save(<-vault, to: self.StakeManagerStoragePath)
         
         // Create and save admin
         let admin <- create Admin()
-        self.account.storage.save(<-admin, to: /storage/StakingAdmin)
+        self.account.save(<-admin, to: /storage/StakingAdmin)
     }
 }
