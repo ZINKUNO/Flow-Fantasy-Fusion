@@ -258,6 +258,47 @@ access(all) contract LeagueFactory {
         return <- create LeagueCollection()
     }
     
+    // Public function to create a league (callable by anyone)
+    access(all) fun createLeaguePublic(
+        name: String,
+        description: String,
+        creator: Address,
+        startTime: UFix64,
+        endTime: UFix64,
+        config: LeagueConfig
+    ): UInt64 {
+        let collectionRef = self.account.storage.borrow<&LeagueCollection>(
+            from: self.LeagueStoragePath
+        ) ?? panic("Could not borrow league collection")
+        
+        return collectionRef.createLeague(
+            name: name,
+            description: description,
+            creator: creator,
+            startTime: startTime,
+            endTime: endTime,
+            config: config
+        )
+    }
+    
+    // Public function to get all league IDs
+    access(all) fun getLeagueIds(): [UInt64] {
+        let collectionRef = self.account.storage.borrow<&LeagueCollection>(
+            from: self.LeagueStoragePath
+        ) ?? panic("Could not borrow league collection")
+        
+        return collectionRef.getLeagueIds()
+    }
+    
+    // Public function to get league details
+    access(all) fun getLeagueDetails(leagueId: UInt64): &League? {
+        let collectionRef = self.account.storage.borrow<&LeagueCollection>(
+            from: self.LeagueStoragePath
+        ) ?? panic("Could not borrow league collection")
+        
+        return collectionRef.borrowLeague(leagueId: leagueId)
+    }
+    
     init() {
         self.AdminStoragePath = /storage/LeagueFactoryAdmin
         self.LeagueStoragePath = /storage/LeagueCollection

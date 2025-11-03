@@ -18,7 +18,36 @@ const Leagues = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/api/leagues`);
-      setLeagues(response.data.leagues || []);
+      console.log('Leagues API response:', response.data);
+      
+      // Backend returns response.data.data
+      const leaguesData = response.data.data || response.data.leagues || [];
+      
+      // Transform to match frontend format with safe fallbacks
+      const formattedLeagues = leaguesData.map(league => {
+        const rawStatus = typeof league.status === 'string' ? league.status : league.status?.rawValue;
+        const status = rawStatus === '0' ? 'Pending'
+          : rawStatus === '1' ? 'Active'
+          : rawStatus === '2' ? 'InProgress'
+          : rawStatus === '3' ? 'Finalizing'
+          : rawStatus === '4' ? 'Completed'
+          : (rawStatus || 'Active');
+
+        return {
+          leagueId: league.id || league.leagueId || `${league.name}-${league.startTime}`,
+          name: league.name,
+          description: league.description,
+          status,
+          participants: Number(league.participantCount || league.participants || 0),
+          maxPlayers: Number(league.maxPlayers || 0),
+          totalStaked: Number(league.prizePool || league.totalStaked || 0),
+          tokenType: 'FLOW',
+          startTime: Number(league.startTime) * 1000, // seconds -> ms
+          endTime: Number(league.endTime) * 1000
+        };
+      });
+      
+      setLeagues(formattedLeagues);
     } catch (error) {
       console.error('Error fetching leagues:', error);
       // Mock data fallback
@@ -129,7 +158,7 @@ const Leagues = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 text-gray-400">
                     <Users className="w-4 h-4" />
-                    <span>{league.participants}/{league.maxPlayers} Players</span>
+                    <span>{league.participants}/{league.maxPlayers || '∞'} Players</span>
                   </div>
                   <div className="flex items-center space-x-2 text-flow-green">
                     <Coins className="w-4 h-4" />
@@ -152,7 +181,7 @@ const Leagues = () => {
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div
                     className="bg-flow-green h-2 rounded-full transition-all"
-                    style={{ width: `${(league.participants / league.maxPlayers) * 100}%` }}
+                    style={{ width: `${league.maxPlayers ? Math.min(100, (league.participants / league.maxPlayers) * 100) : 0}%` }}
                   ></div>
                 </div>
               </div>

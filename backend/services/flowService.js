@@ -25,7 +25,7 @@ class FlowService {
       const script = `
         import LeagueFactory from ${this.leagueFactoryAddress}
         
-        pub fun main(): [AnyStruct] {
+        access(all) fun main(): [AnyStruct] {
           let leagues: [AnyStruct] = []
           let leagueIds = LeagueFactory.getLeagueIds()
           
@@ -55,7 +55,7 @@ class FlowService {
       const script = `
         import LeagueFactory from ${this.leagueFactoryAddress}
         
-        pub fun main(leagueId: UInt64): AnyStruct? {
+        access(all) fun main(leagueId: UInt64): AnyStruct? {
           return LeagueFactory.getLeagueDetails(leagueId: leagueId)
         }
       `;
@@ -80,7 +80,7 @@ class FlowService {
       const script = `
         import StakingManager from ${this.stakingManagerAddress}
         
-        pub fun main(address: Address): [AnyStruct] {
+        access(all) fun main(address: Address): [AnyStruct] {
           return StakingManager.getUserStakes(address: address)
         }
       `;
@@ -105,7 +105,7 @@ class FlowService {
       const script = `
         import LeagueFactory from ${this.leagueFactoryAddress}
         
-        pub fun main(leagueId: UInt64): [Address] {
+        access(all) fun main(leagueId: UInt64): [Address] {
           return LeagueFactory.getLeagueParticipants(leagueId: leagueId)
         }
       `;
@@ -130,7 +130,7 @@ class FlowService {
       const script = `
         import StakingManager from ${this.stakingManagerAddress}
         
-        pub fun main(leagueId: UInt64): UFix64 {
+        access(all) fun main(leagueId: UInt64): UFix64 {
           return StakingManager.getLeagueTotalStake(leagueId: leagueId)
         }
       `;
@@ -155,7 +155,7 @@ class FlowService {
       const script = `
         import StakingManager from ${this.stakingManagerAddress}
         
-        pub fun main(leagueId: UInt64, address: Address): Bool {
+        access(all) fun main(leagueId: UInt64, address: Address): Bool {
           return StakingManager.hasStake(leagueId: leagueId, address: address)
         }
       `;
@@ -184,7 +184,7 @@ class FlowService {
         import FlowToken from 0x7e60df042a9c0868
         import FungibleToken from 0x9a0766d93b6608b7
         
-        pub fun main(address: Address): UFix64 {
+        access(all) fun main(address: Address): UFix64 {
           let account = getAccount(address)
           let vaultRef = account
             .getCapability(/public/flowTokenBalance)
@@ -230,7 +230,7 @@ class FlowService {
       const script = `
         import Settlement from ${this.settlementAddress}
         
-        pub fun main(leagueId: UInt64): String {
+        access(all) fun main(leagueId: UInt64): String {
           return Settlement.getSettlementStatus(leagueId: leagueId)
         }
       `;
@@ -244,6 +244,49 @@ class FlowService {
     } catch (error) {
       console.error(`Error fetching settlement status for league ${leagueId}:`, error);
       return "unknown";
+    }
+  }
+
+  /**
+   * Create a new league on the blockchain
+   */
+  async createLeague(leagueData) {
+    try {
+      const {
+        name,
+        description,
+        startTime,
+        endTime,
+        minPlayers,
+        maxPlayers,
+        entryFee,
+        allowedTokens,
+        allowNFTs,
+        maxStakePerUser
+      } = leagueData;
+
+      // For now, return a mock league ID since we need wallet authorization
+      // In production, this would be called from the frontend with FCL
+      const mockLeagueId = Math.floor(Math.random() * 1000) + 1;
+      
+      console.log('League creation requested:', {
+        name,
+        description,
+        startTime,
+        endTime,
+        minPlayers,
+        maxPlayers,
+        entryFee,
+        allowedTokens,
+        allowNFTs,
+        maxStakePerUser
+      });
+      
+      // Return mock ID - frontend should handle actual transaction
+      return mockLeagueId;
+    } catch (error) {
+      console.error('Error creating league:', error);
+      throw new Error(`Failed to create league: ${error.message}`);
     }
   }
 }

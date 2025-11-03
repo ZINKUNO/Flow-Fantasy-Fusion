@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, DollarSign, Shield } from 'lucide-react';
 import { useFlow } from '../utils/FlowContext';
-import axios from 'axios';
+import * as fcl from '@onflow/fcl';
+import * as t from '@onflow/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const CONTRACT_ADDRESS = '0xf474649aaa285cf5';
 
 const CreateLeague = () => {
   const navigate = useNavigate();
@@ -46,20 +48,91 @@ const CreateLeague = () => {
       const startTimestamp = new Date(formData.startTime).getTime() / 1000;
       const endTimestamp = new Date(formData.endTime).getTime() / 1000;
 
-      // Call API to create league (which will trigger Cadence transaction)
-      const response = await axios.post(`${API_URL}/api/leagues`, {
-        ...formData,
-        startTime: startTimestamp,
-        endTime: endTimestamp
+      // Create league transaction - uses public contract function
+      const CREATE_LEAGUE_TX = `
+import LeagueFactory from ${CONTRACT_ADDRESS}
+
+transaction(
+    name: String,
+    description: String,
+    startTime: UFix64,
+    endTime: UFix64,
+    minPlayers: UInt32,
+    maxPlayers: UInt32,
+    entryFee: UFix64,
+    allowedTokens: [String],
+    allowNFTs: Bool,
+    maxStakePerUser: UFix64
+) {
+    let creatorAddress: Address
+
+    prepare(signer: &Account) {
+        // Capture the signer's address to use in execute
+        self.creatorAddress = signer.address
+    }
+
+    execute {
+        // Create league config
+        let config = LeagueFactory.LeagueConfig(
+            minPlayers: minPlayers,
+            maxPlayers: maxPlayers,
+            entryFee: entryFee,
+            allowedTokens: allowedTokens,
+            allowNFTs: allowNFTs,
+            maxStakePerUser: maxStakePerUser
+        )
+
+        // Create the league using public contract function
+        let leagueId = LeagueFactory.createLeaguePublic(
+            name: name,
+            description: description,
+            creator: self.creatorAddress,
+            startTime: startTime,
+            endTime: endTime,
+            config: config
+        )
+
+        log("League created with ID: ".concat(leagueId.toString()))
+    }
+}
+      `;
+
+      console.log('Submitting league creation transaction...');
+      
+      // Execute transaction
+      const txId = await fcl.mutate({
+        cadence: CREATE_LEAGUE_TX,
+        args: (arg, t) => [
+          arg(formData.name, t.String),
+          arg(formData.description, t.String),
+          arg(startTimestamp.toFixed(1), t.UFix64),
+          arg(endTimestamp.toFixed(1), t.UFix64),
+          arg(parseInt(formData.minPlayers), t.UInt32),
+          arg(parseInt(formData.maxPlayers), t.UInt32),
+          arg(parseFloat(formData.entryFee).toFixed(1), t.UFix64),
+          arg(formData.allowedTokens, t.Array(t.String)),
+          arg(formData.allowNFTs, t.Bool),
+          arg(parseFloat(formData.maxStakePerUser).toFixed(1), t.UFix64)
+        ],
+        limit: 1000
       });
 
-      if (response.data.success) {
-        alert(`League created successfully! ID: ${response.data.leagueId}`);
-        navigate(`/leagues/${response.data.leagueId}`);
+      console.log('Transaction ID:', txId);
+      alert('Transaction submitted! Waiting for confirmation...');
+
+      // Wait for transaction to be sealed
+      const tx = await fcl.tx(txId).onceSealed();
+      console.log('Transaction sealed:', tx);
+
+      if (tx.status === 4) {
+        alert('League created successfully!');
+        navigate('/leagues');
+      } else {
+        throw new Error('Transaction failed');
       }
     } catch (error) {
       console.error('Error creating league:', error);
-      alert('Failed to create league. Please try again.');
+      alert(`Failed to create league: ${error.message || 'Please try again'}`);
     } finally {
       setLoading(false);
     }
