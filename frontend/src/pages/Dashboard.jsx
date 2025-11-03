@@ -24,37 +24,73 @@ const Dashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      // In production: fetch actual user data from blockchain
-      // Mock data for hackathon
-      setMyLeagues([
-        {
-          leagueId: 1,
-          name: 'NBA Fantasy Championship',
-          status: 'Active',
-          staked: 25.5,
-          position: 2,
-          totalPlayers: 12,
-          endTime: Date.now() + 604800000
-        },
-        {
-          leagueId: 2,
-          name: 'NFL Weekly Challenge',
-          status: 'Completed',
-          staked: 50.0,
-          position: 1,
-          totalPlayers: 16,
-          winnings: 450.0
-        }
-      ]);
-
+      // Fetch all leagues from blockchain
+      const response = await axios.get(`${API_URL}/api/leagues`);
+      const allLeagues = response.data.data || [];
+      
+      // Filter leagues where user is a participant
+      const userLeagues = allLeagues.filter(league => {
+        // Check if user's address is in participants (when we add participant tracking)
+        // For now, fetch user's stake info for each league
+        return true; // Will be filtered by stake info below
+      });
+      
+      // Fetch stake info for each league
+      const leaguesWithStakes = await Promise.all(
+        userLeagues.map(async (league) => {
+          try {
+            const stakeResponse = await axios.get(
+              `${API_URL}/api/staking/${league.id}/${user.addr}`
+            );
+            const stakeInfo = stakeResponse.data.stakeInfo;
+            
+            if (stakeInfo && stakeInfo.totalStaked > 0) {
+              return {
+                leagueId: league.id,
+                name: league.name,
+                status: league.status,
+                staked: stakeInfo.totalStaked,
+                position: 0, // Will be calculated from leaderboard
+                totalPlayers: league.participantCount || 0,
+                endTime: league.endTime,
+                winnings: 0 // Will be set if league is completed and user won
+              };
+            }
+            return null;
+          } catch (err) {
+            return null;
+          }
+        })
+      );
+      
+      // Filter out null values (leagues user hasn't joined)
+      const myLeaguesData = leaguesWithStakes.filter(l => l !== null);
+      setMyLeagues(myLeaguesData);
+      
+      // Calculate stats
+      const totalStaked = myLeaguesData.reduce((sum, l) => sum + l.staked, 0);
+      const activeLeagues = myLeaguesData.filter(l => 
+        l.status === 'Active' || l.status === 'InProgress'
+      ).length;
+      const wonLeagues = myLeaguesData.filter(l => l.winnings > 0).length;
+      const totalWinnings = myLeaguesData.reduce((sum, l) => sum + (l.winnings || 0), 0);
+      
       setStats({
-        totalStaked: 75.5,
-        activeLeagues: 1,
-        wonLeagues: 1,
-        totalWinnings: 450.0
+        totalStaked: totalStaked.toFixed(2),
+        activeLeagues,
+        wonLeagues,
+        totalWinnings: totalWinnings.toFixed(2)
       });
     } catch (error) {
       console.error('Error fetching user data:', error);
+      // Set empty state on error
+      setMyLeagues([]);
+      setStats({
+        totalStaked: 0,
+        activeLeagues: 0,
+        wonLeagues: 0,
+        totalWinnings: 0
+      });
     }
   };
 

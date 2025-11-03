@@ -3,8 +3,29 @@ const router = express.Router();
 const NodeCache = require('node-cache');
 const flowService = require('../services/flowService');
 
-// Cache for 30 seconds (blockchain data updates frequently)
-const cache = new NodeCache({ stdTTL: 30 });
+// Cache for 2 minutes to reduce blockchain API calls
+const cache = new NodeCache({ stdTTL: 120 });
+
+// Simple in-memory rate limiter
+const requestTracker = new Map();
+const RATE_LIMIT_WINDOW = 10000; // 10 seconds
+const MAX_REQUESTS = 5; // Max 5 requests per 10 seconds
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const userRequests = requestTracker.get(ip) || [];
+  
+  // Remove old requests outside the window
+  const recentRequests = userRequests.filter(time => now - time < RATE_LIMIT_WINDOW);
+  
+  if (recentRequests.length >= MAX_REQUESTS) {
+    return false; // Rate limit exceeded
+  }
+  
+  recentRequests.push(now);
+  requestTracker.set(ip, recentRequests);
+  return true;
+}
 
 /**
  * GET /api/leagues
@@ -12,7 +33,7 @@ const cache = new NodeCache({ stdTTL: 30 });
  */
 router.get('/', async (req, res) => {
   try {
-    // Check cache first
+    // Check cache first (always return cached if available)
     const cachedLeagues = cache.get('all_leagues');
     if (cachedLeagues) {
       return res.json({
@@ -20,6 +41,16 @@ router.get('/', async (req, res) => {
         data: cachedLeagues,
         cached: true,
         source: 'cache'
+      });
+    }
+
+    // Check rate limit before making blockchain call
+    const clientIp = req.ip || req.connection.remoteAddress;
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many requests. Please wait a moment and try again.',
+        retryAfter: 10
       });
     }
 
@@ -90,15 +121,18 @@ router.get('/:leagueId', async (req, res) => {
     if (cachedLeague) {
       return res.json({
         success: true,
-        data: cachedLeague,
+        league: cachedLeague,
         cached: true,
         source: 'cache'
       });
     }
 
-    // Fetch from blockchain
+    // Fetch all leagues from blockchain
     console.log(`Fetching league ${leagueId} from Flow blockchain...`);
-    const league = await flowService.getLeagueDetails(parseInt(leagueId));
+    const leagues = await flowService.getLeagues();
+    
+    // Find the specific league
+    const league = leagues.find(l => String(l.id) === String(leagueId));
     
     if (!league) {
       return res.status(404).json({
@@ -106,13 +140,6 @@ router.get('/:leagueId', async (req, res) => {
         error: `League ${leagueId} not found on blockchain`
       });
     }
-
-    // Fetch additional data
-    const [participants, totalStake, isActive] = await Promise.all([
-      flowService.getLeagueParticipants(parseInt(leagueId)),
-      flowService.getLeagueTotalStake(parseInt(leagueId)),
-      flowService.isLeagueActive(parseInt(leagueId))
-    ]);
     
     // Format response
     const formattedLeague = {
@@ -121,18 +148,16 @@ router.get('/:leagueId', async (req, res) => {
       description: league.description,
       startTime: parseFloat(league.startTime),
       endTime: parseFloat(league.endTime),
-      minPlayers: parseInt(league.minPlayers),
-      maxPlayers: parseInt(league.maxPlayers),
-      entryFee: parseFloat(league.entryFee),
-      allowedTokens: league.allowedTokens,
-      allowNFTs: league.allowNFTs,
-      maxStakePerUser: parseFloat(league.maxStakePerUser),
-      status: isActive ? 'active' : 'inactive',
-      participants: participants,
-      participantCount: participants.length,
-      prizePool: parseFloat(totalStake),
-      creator: league.creator,
-      isActive: isActive
+      minPlayers: parseInt(league.minPlayers || 2),
+      maxPlayers: parseInt(league.maxPlayers || 20),
+      entryFee: parseFloat(league.entryFee || 0),
+      allowedTokens: league.allowedTokens || ['FLOW'],
+      allowNFTs: league.allowNFTs || false,
+      maxStakePerUser: parseFloat(league.maxStakePerUser || 1000),
+      status: league.status || 'Active',
+      participantCount: league.participantCount || 0,
+      prizePool: parseFloat(league.prizePool || 0),
+      creator: league.creator
     };
     
     // Cache the result
@@ -142,7 +167,7 @@ router.get('/:leagueId', async (req, res) => {
     
     res.json({
       success: true,
-      data: formattedLeague,
+      league: formattedLeague,
       cached: false,
       source: 'blockchain'
     });
@@ -228,6 +253,25 @@ router.get('/:leagueId/status', async (req, res) => {
       success: false,
       error: 'Failed to fetch league status',
       details: error.message
+    });
+  }
+});
+
+/**
+ * DELETE /api/leagues/cache
+ * Clear the leagues cache (useful after transactions)
+ */
+router.delete('/cache', (req, res) => {
+  try {
+    cache.flushAll();
+    res.json({
+      success: true,
+      message: 'Cache cleared successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear cache'
     });
   }
 });

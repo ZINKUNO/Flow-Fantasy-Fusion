@@ -34,11 +34,11 @@ const Leagues = () => {
           : (rawStatus || 'Active');
 
         return {
-          leagueId: league.id || league.leagueId || `${league.name}-${league.startTime}`,
+          leagueId: Number(league.id || league.leagueId || 0),
           name: league.name,
           description: league.description,
           status,
-          participants: Number(league.participantCount || league.participants || 0),
+          participants: Number(league.participantCount || league.participants?.length || 0),
           maxPlayers: Number(league.maxPlayers || 0),
           totalStaked: Number(league.prizePool || league.totalStaked || 0),
           tokenType: 'FLOW',

@@ -40,6 +40,14 @@ npm run dev:frontend  # Frontend (port 3000)
 # 5. Open http://localhost:3000
 ```
 
+### What's new in this build
+
+- Real blockchain-backed data on Dashboard and League pages (no mock data)
+- Gemini AI-powered lineup suggestions with rule-based fallback
+- Backend caching (120s) and per-IP rate limiting (5 req/10s)
+- Post-stake auto-refresh with cache clear to reflect updated participant count and prize pool
+
+
 ---
 
 ## 📋 Table of Contents
@@ -157,8 +165,10 @@ Flow Fantasy Fusion provides:
 │   Flow Blockchain        │        │   AI Service (Flask) │
 │  ┌──────────────────┐    │        │  ┌────────────────┐ │
 │  │ LeagueFactory    │    │        │  │ LineupPredictor│ │
-│  │ StakingManager   │    │        │  │ Rule-based ML  │ │
-│  │ Settlement       │    │        │  └────────────────┘ │
+│  │ StakingManager   │    │        │  │ Gemini AI (+RB)│ │
+│  │ LineupPredictor│ │
+│  │ Gemini AI (+RB)│ │
+│  └────────────────┘ │
 │  └──────────────────┘    │        └──────────────────────┘
 │  ┌──────────────────┐    │
 │  │ Forte Actions    │    │
@@ -229,7 +239,21 @@ Flow Fantasy Fusion provides:
 - **Python 3.8+**: AI service runtime
 - **Flask**: Lightweight web framework
 - **Flask-CORS**: CORS support
-- **Rule-based Algorithm**: Deterministic lineup scoring
+- **Gemini (google-generativeai)**: AI lineup suggestions with rationale
+- **Rule-based Algorithm**: Deterministic fallback when Gemini is unavailable
+
+#### Gemini Setup
+
+1. Create `ai/.env` from example and set your key
+   ```bash
+   cd ai
+   cp .env.example .env
+   # edit .env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+2. Ensure dependency is installed (already in requirements.txt): `google-generativeai`
+3. Start the AI service: `python app.py`
+4. The service falls back to rule-based if no key is provided
 
 ### Development Tools
 - **Git**: Version control
@@ -343,6 +367,11 @@ Open your browser to `http://localhost:3000`
 - Click on a league to view details
 - Enter stake amount (min = entry fee)
 - Submit stake transaction
+
+After the transaction seals, the app automatically:
+- Clears the backend leagues cache
+- Waits briefly for chain finality
+- Fetches fresh league data so Participant count and Total Staked update immediately
 
 #### 5. Get AI Lineup Suggestion
 - On league detail page, click "Get AI Lineup Suggestion"
@@ -545,15 +574,27 @@ GET /api/leagues
 ```json
 {
   "success": true,
-  "leagues": [
+  "data": [
     {
-      "leagueId": 1,
+      "id": 1,
       "name": "NBA Fantasy Championship",
+      "description": "...",
+      "startTime": 1735689600,
+      "endTime": 1736294400,
+      "minPlayers": 2,
+      "maxPlayers": 20,
+      "entryFee": 10.0,
+      "allowedTokens": ["FLOW"],
+      "allowNFTs": false,
+      "maxStakePerUser": 1000,
       "status": "Active",
-      "participants": 12,
-      "totalStaked": 250.5
+      "participantCount": 12,
+      "prizePool": 250.5,
+      "creator": "0x..."
     }
-  ]
+  ],
+  "cached": false,
+  "source": "blockchain"
 }
 ```
 
@@ -568,12 +609,24 @@ GET /api/leagues/:leagueId
 {
   "success": true,
   "league": {
-    "leagueId": 1,
+    "id": 1,
     "name": "NBA Fantasy Championship",
-    "config": {...},
-    "participants": [...],
-    "totalStaked": 250.5
-  }
+    "description": "...",
+    "startTime": 1735689600,
+    "endTime": 1736294400,
+    "minPlayers": 2,
+    "maxPlayers": 20,
+    "entryFee": 10.0,
+    "allowedTokens": ["FLOW"],
+    "allowNFTs": false,
+    "maxStakePerUser": 1000,
+    "status": "Active",
+    "participantCount": 12,
+    "prizePool": 250.5,
+    "creator": "0x..."
+  },
+  "cached": false,
+  "source": "blockchain"
 }
 ```
 
@@ -631,9 +684,18 @@ Content-Type: application/json
     "positions": {...},
     "expectedScore": 387.45,
     "confidence": 0.82,
-    "rationale": "..."
+    "rationale": "...",
+    "aiMethod": "gemini-ai" // or "rule-based" if Gemini unavailable
   }
 }
+
+#### Clear Leagues Cache (after transactions)
+
+```http
+DELETE /api/leagues/cache
+```
+
+Clears the in-memory cache so the next request fetches fresh data from chain. The frontend automatically calls this after a successful stake transaction.
 ```
 
 Full API documentation: [API Docs](./docs/API.md) (TBD)

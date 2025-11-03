@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Users, Coins, Calendar, TrendingUp, Sparkles, Clock } from 'lucide-react';
 import { useFlow } from '../utils/FlowContext';
+import * as fcl from '@onflow/fcl';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const LeagueDetail = () => {
-  const { leagueId } = useParams();
+  const { leagueId: leagueIdParam } = useParams();
+  // Parse leagueId as number, handle both numeric and string IDs
+  const leagueId = parseInt(leagueIdParam) || leagueIdParam;
   const { isAuthenticated, user } = useFlow();
   const [league, setLeague] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,37 +22,39 @@ const LeagueDetail = () => {
     fetchLeagueDetails();
   }, [leagueId]);
 
-  const fetchLeagueDetails = async () => {
+  const fetchLeagueDetails = async (forceRefresh = false) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/leagues/${leagueId}`);
-      setLeague(response.data.league);
+      
+      // Add cache busting parameter if force refresh
+      const cacheBuster = forceRefresh ? `?t=${Date.now()}` : '';
+      const response = await axios.get(`${API_URL}/api/leagues/${leagueId}${cacheBuster}`);
+      const leagueData = response.data.league || response.data;
+      
+      // Fetch real stake info if user is authenticated
+      let userStakeInfo = null;
+      if (isAuthenticated && user) {
+        try {
+          const stakeResponse = await axios.get(
+            `${API_URL}/api/staking/${leagueId}/${user.addr}${cacheBuster}`
+          );
+          userStakeInfo = stakeResponse.data.stakeInfo;
+        } catch (err) {
+          console.log('No stake info for user');
+        }
+      }
+      
+      // Enrich league data with real stake info
+      const enrichedLeague = {
+        ...leagueData,
+        userStaked: userStakeInfo?.totalStaked || 0,
+        userHasJoined: userStakeInfo?.totalStaked > 0
+      };
+      
+      setLeague(enrichedLeague);
     } catch (error) {
       console.error('Error fetching league:', error);
-      // Mock data fallback
-      setLeague({
-        leagueId: parseInt(leagueId),
-        name: 'NBA Fantasy Championship',
-        description: 'Weekly NBA fantasy competition with Top Shot moments',
-        status: 'Active',
-        creator: '0x01',
-        startTime: Date.now() + 86400000,
-        endTime: Date.now() + 604800000,
-        config: {
-          minPlayers: 4,
-          maxPlayers: 20,
-          entryFee: 10.0,
-          allowedTokens: ['FLOW', 'FUSD'],
-          allowNFTs: true,
-          maxStakePerUser: 1000.0
-        },
-        participants: [
-          { address: '0x01', staked: 25.5, lineup: true },
-          { address: '0x02', staked: 50.0, lineup: true }
-        ],
-        totalStaked: 75.5,
-        settlementScheduled: false
-      });
+      setLeague(null);
     } finally {
       setLoading(false);
     }
@@ -62,6 +67,7 @@ const LeagueDetail = () => {
     }
 
     try {
+      // Get transaction from backend
       const response = await axios.post(`${API_URL}/api/staking/stake`, {
         leagueId,
         playerAddress: user.addr,
@@ -69,13 +75,57 @@ const LeagueDetail = () => {
         tokenType: 'FLOW'
       });
 
-      if (response.data.success) {
-        alert('Staked successfully! Transaction ID: ' + response.data.txId);
-        fetchLeagueDetails();
+      if (response.data.success && response.data.transaction) {
+        console.log('Executing stake transaction...');
+        
+        // Execute transaction on blockchain with user's wallet
+        const txId = await fcl.mutate({
+          cadence: response.data.transaction,
+          args: (arg, t) => [
+            arg(leagueId, t.UInt64),
+            arg(stakeAmount.toFixed(8), t.UFix64)
+          ],
+          proposer: fcl.authz,
+          payer: fcl.authz,
+          authorizations: [fcl.authz],
+          limit: 9999
+        });
+
+        console.log('Transaction submitted:', txId);
+        alert(`Staked successfully! Transaction ID: ${txId}\n\nView on Flowscan: https://testnet.flowscan.org/transaction/${txId}`);
+        
+        // Wait for transaction to be sealed
+        await fcl.tx(txId).onceSealed();
+        console.log('Transaction sealed');
+        
+        // Clear backend cache to get fresh data
+        try {
+          await axios.delete(`${API_URL}/api/leagues/cache`);
+        } catch (err) {
+          console.log('Cache clear failed, will fetch anyway');
+        }
+        
+        // Wait a moment for blockchain to update
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Fetch fresh league data
+        await fetchLeagueDetails();
       }
     } catch (error) {
       console.error('Error staking:', error);
-      alert('Failed to stake tokens');
+      
+      // Check for specific error messages
+      const errorMsg = error.message || error.toString();
+      
+      if (errorMsg.includes('Player already joined')) {
+        alert('✅ You have already joined this league!\n\nYour address is already in the participants list.');
+      } else if (errorMsg.includes('League not found')) {
+        alert('❌ League not found. Please try a different league.');
+      } else if (errorMsg.includes('declined') || errorMsg.includes('rejected')) {
+        alert('Transaction was cancelled.');
+      } else {
+        alert('Failed to join league: ' + errorMsg.substring(0, 200));
+      }
     }
   };
 
@@ -166,13 +216,13 @@ const LeagueDetail = () => {
         <div className="grid md:grid-cols-4 gap-6">
           <div className="text-center p-4 bg-flow-dark rounded-lg">
             <Users className="w-6 h-6 mx-auto mb-2 text-flow-green" />
-            <div className="text-2xl font-bold">{league.participants.length}/{league.config.maxPlayers}</div>
+            <div className="text-2xl font-bold">{league.participantCount || 0}/{league.maxPlayers || 20}</div>
             <div className="text-sm text-gray-400">Players</div>
           </div>
 
           <div className="text-center p-4 bg-flow-dark rounded-lg">
             <Coins className="w-6 h-6 mx-auto mb-2 text-flow-green" />
-            <div className="text-2xl font-bold">{league.totalStaked}</div>
+            <div className="text-2xl font-bold">{league.prizePool || 0}</div>
             <div className="text-sm text-gray-400">Total Staked</div>
           </div>
 
@@ -209,13 +259,13 @@ const LeagueDetail = () => {
                   type="number"
                   value={stakeAmount}
                   onChange={(e) => setStakeAmount(parseFloat(e.target.value))}
-                  min={league.config.entryFee}
-                  max={league.config.maxStakePerUser}
+                  min={league.entryFee || 10}
+                  max={league.maxStakePerUser || 1000}
                   step="0.1"
                   className="input-field"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Min: {league.config.entryFee} FLOW | Max: {league.config.maxStakePerUser} FLOW
+                  Min: {league.entryFee || 10} FLOW | Max: {league.maxStakePerUser || 1000} FLOW
                 </p>
               </div>
 
@@ -309,19 +359,19 @@ const LeagueDetail = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Entry Fee</span>
-                <span className="font-semibold">{league.config.entryFee} FLOW</span>
+                <span className="font-semibold">{league.entryFee || 10} FLOW</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Min Players</span>
-                <span className="font-semibold">{league.config.minPlayers}</span>
+                <span className="font-semibold">{league.minPlayers || 2}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Max Players</span>
-                <span className="font-semibold">{league.config.maxPlayers}</span>
+                <span className="font-semibold">{league.maxPlayers || 20}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">NFT Staking</span>
-                <span className="font-semibold">{league.config.allowNFTs ? 'Allowed' : 'Not Allowed'}</span>
+                <span className="font-semibold">{league.allowNFTs ? 'Allowed' : 'Not Allowed'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Settlement</span>
@@ -334,7 +384,7 @@ const LeagueDetail = () => {
           <div className="card">
             <h3 className="text-xl font-bold mb-4">Participants</h3>
             <div className="space-y-3">
-              {league.participants.map((participant, index) => (
+              {(league.participants || []).map((participant, index) => (
                 <div key={index} className="flex justify-between items-center p-3 bg-flow-dark rounded-lg">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-flow-green rounded-full flex items-center justify-center text-black font-bold">

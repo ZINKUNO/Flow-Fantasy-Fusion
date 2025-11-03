@@ -1,7 +1,7 @@
 """
 AI Lineup Prediction Service
 Fresh Code - Built for Forte Hacks
-Rule-based scoring system for fantasy sports lineup optimization
+Gemini AI-powered lineup optimization for fantasy sports
 """
 
 from flask import Flask, request, jsonify
@@ -11,12 +11,23 @@ import random
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 import logging
+import google.generativeai as genai
 
 app = Flask(__name__)
 CORS(app)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Configure Gemini API
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-pro')
+    logger.info("Gemini AI configured successfully")
+else:
+    model = None
+    logger.warning("GEMINI_API_KEY not found, using fallback rule-based system")
 
 @dataclass
 class PlayerStats:
@@ -210,6 +221,70 @@ def health_check():
     })
 
 
+def predict_lineup_with_gemini(available_players, positions, player_stats, strategy):
+    """Use Gemini AI to predict optimal lineup"""
+    try:
+        # Prepare player data for Gemini
+        player_data_str = "\n".join([
+            f"Player {pid}: Performance={stats.recent_performance:.1f}, "
+            f"Value=${stats.market_value:.0f}, Consistency={stats.consistency:.2f}, "
+            f"Trending={stats.trending}, Injury Risk={stats.injury_risk:.2f}"
+            for pid, stats in player_stats.items()
+        ])
+        
+        prompt = f"""You are a fantasy sports AI assistant. Analyze these players and suggest the optimal lineup.
+
+Available Players:
+{player_data_str}
+
+Required Positions: {', '.join(positions)}
+Strategy: {strategy}
+
+Please provide:
+1. Best player for each position (use player IDs)
+2. Expected total score (0-100 scale)
+3. Brief rationale (2-3 sentences)
+
+Format your response as:
+LINEUP: [list of player IDs in order of positions]
+SCORE: [number]
+RATIONALE: [your explanation]"""
+
+        response = model.generate_content(prompt)
+        text = response.text
+        
+        # Parse Gemini response
+        lineup_dict = {}
+        expected_score = 75.0
+        rationale = "AI-optimized lineup based on performance metrics."
+        
+        # Extract lineup
+        if "LINEUP:" in text:
+            lineup_line = text.split("LINEUP:")[1].split("\n")[0]
+            player_ids = [int(x.strip()) for x in lineup_line.replace("[", "").replace("]", "").split(",") if x.strip().isdigit()]
+            for i, pos in enumerate(positions):
+                if i < len(player_ids):
+                    lineup_dict[pos] = [player_ids[i]]
+        
+        # Extract score
+        if "SCORE:" in text:
+            score_line = text.split("SCORE:")[1].split("\n")[0]
+            try:
+                expected_score = float(''.join(filter(str.isdigit, score_line)))
+            except:
+                pass
+        
+        # Extract rationale
+        if "RATIONALE:" in text:
+            rationale = text.split("RATIONALE:")[1].strip()
+        
+        return lineup_dict, expected_score, rationale
+        
+    except Exception as e:
+        logger.error(f"Gemini prediction failed: {e}, falling back to rule-based")
+        return None
+
+
 @app.route('/api/ai/predict-lineup', methods=['POST'])
 def predict_lineup():
     """
@@ -244,13 +319,26 @@ def predict_lineup():
         # Get player statistics
         player_stats = get_player_stats(available_players)
         
-        # Optimize lineup
-        lineup, expected_score, rationale = predictor.optimize_lineup(
-            available_players=available_players,
-            positions=positions,
-            player_stats=player_stats,
-            strategy=strategy
-        )
+        # Try Gemini AI first, fallback to rule-based
+        lineup = None
+        expected_score = 0
+        rationale = ""
+        ai_method = "rule-based"
+        
+        if model:
+            result = predict_lineup_with_gemini(available_players, positions, player_stats, strategy)
+            if result:
+                lineup, expected_score, rationale = result
+                ai_method = "gemini-ai"
+        
+        # Fallback to rule-based if Gemini fails
+        if not lineup:
+            lineup, expected_score, rationale = predictor.optimize_lineup(
+                available_players=available_players,
+                positions=positions,
+                player_stats=player_stats,
+                strategy=strategy
+            )
         
         # Calculate confidence (based on data availability and score distribution)
         confidence = min(0.95, 0.65 + (expected_score / 1000.0))
@@ -261,7 +349,8 @@ def predict_lineup():
                 'positions': lineup,
                 'expectedScore': round(expected_score, 2),
                 'confidence': round(confidence, 2),
-                'rationale': rationale
+                'rationale': rationale,
+                'aiMethod': ai_method
             },
             'metadata': {
                 'leagueId': league_id,
@@ -271,7 +360,7 @@ def predict_lineup():
             }
         }
         
-        logger.info(f"Lineup prediction successful: score={expected_score:.1f}, confidence={confidence:.2f}")
+        logger.info(f"Lineup prediction successful: method={ai_method}, score={expected_score:.1f}, confidence={confidence:.2f}")
         
         return jsonify(response), 200
         

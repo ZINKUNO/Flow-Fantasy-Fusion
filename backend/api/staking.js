@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const flowService = require('../services/flowService');
 
-// POST stake tokens
+// POST stake tokens - Returns transaction for frontend to execute
 router.post('/stake', async (req, res) => {
   try {
     const { leagueId, playerAddress, amount, tokenType } = req.body;
@@ -21,20 +22,22 @@ router.post('/stake', async (req, res) => {
       });
     }
     
-    // In production: Execute stake transaction
-    const txId = `0x${Math.random().toString(16).substr(2, 64)}`;
+    // Get transaction code from FlowService
+    const txData = await flowService.joinLeague(leagueId, playerAddress, amount);
     
     res.json({
       success: true,
-      txId,
+      transaction: txData.transaction,
+      args: txData.args,
       leagueId,
       playerAddress,
       amount,
       tokenType,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      message: 'Transaction ready - execute from frontend with user wallet'
     });
   } catch (error) {
-    console.error('Error staking tokens:', error);
+    console.error('Error preparing stake transaction:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -67,29 +70,32 @@ router.get('/:leagueId/:playerAddress', async (req, res) => {
   }
 });
 
-// POST schedule settlement
+// POST schedule settlement - Returns transaction for frontend to execute
 router.post('/schedule-settlement', async (req, res) => {
   try {
-    const { leagueId, scheduledTime } = req.body;
+    const { leagueId, scheduledTime, winners } = req.body;
     
-    if (!leagueId || !scheduledTime) {
+    if (!leagueId || !winners) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields'
+        error: 'Missing required fields (leagueId, winners)'
       });
     }
     
-    const txId = `0x${Math.random().toString(16).substr(2, 64)}`;
+    // Get transaction code from FlowService
+    const txData = await flowService.scheduleSettlement(leagueId, scheduledTime, winners);
     
     res.json({
       success: true,
+      transaction: txData.transaction,
+      args: txData.args,
       leagueId,
       scheduledTime,
-      txId,
-      message: 'Settlement scheduled successfully'
+      winners,
+      message: 'Settlement transaction ready - execute from frontend with admin wallet'
     });
   } catch (error) {
-    console.error('Error scheduling settlement:', error);
+    console.error('Error preparing settlement transaction:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
