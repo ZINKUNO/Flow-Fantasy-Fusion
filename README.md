@@ -183,13 +183,19 @@ Flow Fantasy Fusion provides:
 
 **Network**: Flow Testnet
 
+### Accounts
+- Primary Contracts Account: `0xf474649aaa285cf5`  
+  https://testnet.flowscan.org/account/0xf474649aaa285cf5
+- Participant/Test Account: `0xb05cd8b646280a89`  
+  https://testnet.flowscan.org/account/0xb05cd8b646280a89
+
 | Contract | Address | Explorer Link |
 |----------|---------|---------------|
-| LeagueFactory | `0xYOUR_ADDRESS_HERE` | [View on Flowscan](https://testnet.flowscan.org/contract/A.YOUR_ADDRESS.LeagueFactory) |
-| StakingManager | `0xYOUR_ADDRESS_HERE` | [View on Flowscan](https://testnet.flowscan.org/contract/A.YOUR_ADDRESS.StakingManager) |
-| Settlement | `0xYOUR_ADDRESS_HERE` | [View on Flowscan](https://testnet.flowscan.org/contract/A.YOUR_ADDRESS.Settlement) |
+| LeagueFactory | `0xf474649aaa285cf5` | [View on Flowscan](https://testnet.flowscan.org/contract/A.0xf474649aaa285cf5.LeagueFactory) |
+| StakingManager | `0xf474649aaa285cf5` | [View on Flowscan](https://testnet.flowscan.org/contract/A.0xf474649aaa285cf5.StakingManager) |
+| Settlement | `0xf474649aaa285cf5` | [View on Flowscan](https://testnet.flowscan.org/contract/A.0xf474649aaa285cf5.Settlement) |
 
-> **Note**: Update these addresses after running `bash scripts/deploy_contracts.sh`
+> These are live on Testnet under account `0xf474649aaa285cf5`.
 
 ---
 
@@ -198,12 +204,12 @@ Flow Fantasy Fusion provides:
 ### Key Transactions (Testnet)
 
 | Transaction Type | TX ID | Explorer Link | Description |
-|-----------------|-------|---------------|-------------|
-| Contract Deployment | `0xDEPLOY_TX_ID` | [View](https://testnet.flowscan.org/transaction/0xDEPLOY_TX_ID) | LeagueFactory deployed |
-| Stake Transaction | `0xSTAKE_TX_ID` | [View](https://testnet.flowscan.org/transaction/0xSTAKE_TX_ID) | 25.5 FLOW staked to League #1 |
-| Settlement Transaction | `0xSETTLE_TX_ID` | [View](https://testnet.flowscan.org/transaction/0xSETTLE_TX_ID) | Automated settlement executed |
+|------------------|------|---------------|-------------|
+| Stake Transaction | `b3a11f1c116b644b612187d43f9d120d3065cff01b9f603433adc332e0bb38e2` | [View](https://testnet.flowscan.org/transaction/b3a11f1c116b644b612187d43f9d120d3065cff01b9f603433adc332e0bb38e2) | Stake & join league (SEALED) |
+| Recent TX (sealed) | `fd9622cd8b192aa71981a7647ce4bf169a104e18e5061d419a4c5625b8069013` | [View](https://testnet.flowscan.org/transaction/fd9622cd8b192aa71981a7647ce4bf169a104e18e5061d419a4c5625b8069013) | Supporting action |
+| Recent TX (sealed) | `a3c29257f823301d75db48fc7e48b6623603e99c5b4fb61c1dcec1ac485643ab` | [View](https://testnet.flowscan.org/transaction/a3c29257f823301d75db48fc7e48b6623603e99c5b4fb61c1dcec1ac485643ab) | Supporting action |
 
-> **Note**: These will be populated after testnet deployment
+> For the full list, see the account pages above. Deployment TX IDs vary per redeploy; reference the Contracts section on Flowscan for the latest code hashes.
 
 ---
 
