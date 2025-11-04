@@ -20,6 +20,9 @@ const aiRoutes = require('./api/ai');
 const dataRoutes = require('./api/data');
 const healthRoutes = require('./api/health');
 
+// Settlement service
+const { startSettlementService } = require('./services/settlementService');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -97,6 +100,12 @@ app.listen(PORT, () => {
   console.log(`🚀 Flow Fantasy Fusion API running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Flow Network: ${process.env.FLOW_NETWORK || 'testnet'}`);
+  
+  // Start automated settlement service (checks every 5 minutes)
+  if (process.env.ENABLE_AUTO_SETTLEMENT !== 'false') {
+    console.log('⏰ Starting automated settlement service...');
+    startSettlementService(5); // Check every 5 minutes
+  }
 });
 
 module.exports = app;
