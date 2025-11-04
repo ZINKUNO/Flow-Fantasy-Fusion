@@ -12,9 +12,8 @@
 
 ## 📺 Demo Video
 
-🎥 **[Watch Demo Video (2-3 minutes)](https://www.loom.com/share/YOUR_VIDEO_ID)**
+🎥 **[Watch Demo Video (2-3 minutes)](https://youtu.be/RL5nG2H680o?si=7gsDMUxZUR_UMW4b)**
 
-*Replace with actual video link after recording*
 
 ---
 
